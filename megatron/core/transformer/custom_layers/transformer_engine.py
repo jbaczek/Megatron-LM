@@ -17,6 +17,7 @@ from megatron.core.tensor_parallel import get_cuda_rng_tracker
 from megatron.core.transformer.enums import AttnMaskType
 from megatron.core.transformer.transformer_config import TransformerConfig
 from megatron.core.transformer.utils import make_sharded_tensors_for_checkpoint
+from megatron.core.transformer.custom_layers.layer_norm_1p import LayerNorm1P
 
 
 def _get_extra_te_kwargs(config: TransformerConfig):
@@ -61,6 +62,13 @@ class TENorm:
                 sequence_parallel=config.sequence_parallel,
                 zero_centered_gamma=config.layernorm_zero_centered_gamma,
                 **_get_extra_te_kwargs(config),
+            )
+        elif config.normalization == "LayerNorm1P":
+            instance = LayerNorm1P(
+                hidden_size=hidden_size,
+                eps=eps,
+                sequence_parallel_enabled=config.sequence_parallel,
+                memory_efficient=config.memory_efficient,
             )
         else:
             raise Exception('Only LayerNorm and RMSNorm are curently supported')
