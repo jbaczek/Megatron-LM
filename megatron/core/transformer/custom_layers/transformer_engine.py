@@ -44,7 +44,15 @@ class TENorm:
     def __new__(
         cls, config: TransformerConfig, hidden_size: int, eps: float = 1e-5,
     ):
-        if config.normalization == "LayerNorm":
+        # XXX: we add it here to avoid modifying nemo's code
+        if config.normalization == "LayerNorm" and config.layernorm_zero_centered_gamma:
+            instance = LayerNorm1P(
+                hidden_size=hidden_size,
+                eps=eps,
+                sequence_parallel_enabled=config.sequence_parallel,
+                memory_efficient=False, # config.memory_efficient, config comes from nemo
+            )
+        elif config.normalization == "LayerNorm":
             instance = te.pytorch.LayerNorm(
                 hidden_size=hidden_size,
                 eps=eps,
@@ -62,13 +70,6 @@ class TENorm:
                 sequence_parallel=config.sequence_parallel,
                 zero_centered_gamma=config.layernorm_zero_centered_gamma,
                 **_get_extra_te_kwargs(config),
-            )
-        elif config.normalization == "LayerNorm1P":
-            instance = LayerNorm1P(
-                hidden_size=hidden_size,
-                eps=eps,
-                sequence_parallel_enabled=config.sequence_parallel,
-                memory_efficient=config.memory_efficient,
             )
         else:
             raise Exception('Only LayerNorm and RMSNorm are curently supported')
