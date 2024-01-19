@@ -30,6 +30,7 @@ if HAVE_APEX:
     # TODO: use Apex implementation
     class LayerNorm1P(FastLayerNorm):
         def __init__(self, *args, **kwargs):
+            self.memory_efficient = kwargs.pop('memory_efficient', False)
             super().__init__(*args, **kwargs)
             assert isinstance(
                 self, OrigFastLayerNorm
@@ -40,7 +41,7 @@ if HAVE_APEX:
             torch.nn.init.zeros_(self.bias)
 
         def forward(self, x):
-            return _fast_layer_norm(x, self.weight + 1, self.bias, self.epsilon, memory_efficient=False)
+            return _fast_layer_norm(x, self.weight + 1, self.bias, self.epsilon, memory_efficient=self.memory_efficient)
 
 
 else:
