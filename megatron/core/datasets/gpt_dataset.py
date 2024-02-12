@@ -399,13 +399,34 @@ class GPTDataset(MegatronDataset):
 
             assert document_index.dtype == numpy.int32
             assert self.dataset.sequence_lengths.dtype == numpy.int32
-            sample_index = helpers.build_sample_idx(
+
+            try:
+                from nemo.collections.nlp.data.language_modeling.megatron.dataset_utils import compile_helper
+
+                compile_helper()
+                from nemo.collections.nlp.data.language_modeling.megatron import helpers as nemo_helpers
+            except ImportError:
+                raise ImportError(
+                    f'Could not compile megatron dataset C++ helper functions and therefore cannot import helpers python file.'
+                )
+
+            sample_index = nemo_helpers.build_sample_idx(
                 self.dataset.sequence_lengths,
                 document_index,
                 sequence_length,
                 num_epochs,
                 num_tokens_per_epoch,
+                True,
+                0
             )
+
+            #sample_index = helpers.build_sample_idx(
+            #    self.dataset.sequence_lengths,
+            #    document_index,
+            #    sequence_length,
+            #    num_epochs,
+            #    num_tokens_per_epoch,
+            #)
             numpy.save(path_to_sample_index, sample_index, allow_pickle=True)
             t_end = time.time()
             log_single_rank(logger, logging.DEBUG, f"\t> time elapsed: {t_end - t_beg:4f} seconds")
